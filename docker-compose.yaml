@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgis/postgis:13-3.1-alpine
+    environment:
+      POSTGRES_PASSWORD: postgrespassword
+    networks:
+      - hasura
+    ports:
+      - "5432:5432"
+  graphql-engine:
+    image: hasura/graphql-engine:v2.26.0.cli-migrations-v3
+    ports:
+      - "7070:8080"
+    depends_on:
+      - postgres
+    environment:
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "anonymous"
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgrespassword@postgres:5432/postgres
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup,http-log,webhook-log,websocket-log,query-log,livequery-poller-log,action-handler-log,data-connector-log # all allowed log-types
+      HASURA_GRAPHQL_LOG_LEVEL: debug
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"integrationTestJWTSecret_integrationTestJWTSecret"}'
+      HASURA_GRAPHQL_ADMIN_SECRET: "kdadsfsjfgasdfsdfhdfjasdfsdfnvdlrghneslifh"
+      HASURA_GRAPHQL_INFER_FUNCTION_PERMISSIONS: "false"
+    networks:
+      - hasura
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+networks:
+  hasura:
+    external: true

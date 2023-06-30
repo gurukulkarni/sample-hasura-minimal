@@ -1,0 +1,36 @@
+name: sample-build-jet-hasura-minimal
+
+on:
+  workflow_dispatch:
+    inputs:
+      vm-size: # https://buildjet.com/for-github-actions/docs/runners#amd64
+        type: choice
+        description: 'Select available runners'
+        required: false
+        options:
+          - buildjet-2vcpu-ubuntu-2204
+          - buildjet-4vcpu-ubuntu-2204
+          - buildjet-8vcpu-ubuntu-2204
+          - buildjet-16vcpu-ubuntu-2204
+          - buildjet-32vcpu-ubuntu-2204
+          - ubuntu-latest
+        default: buildjet-8vcpu-ubuntu-2204
+jobs:
+  build:
+    runs-on: ${{ inputs.vm-size }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v3
+      - run: docker swarm init
+      - run: docker network create --ingress --driver overlay ingress || true
+      - run: docker network create -d overlay hasura
+      - run: docker stack deploy hasura -c docker-compose.yaml
+        working-directory: internaldocumentation/playground/sample-minimal-hasura
+      - run: until curl --fail --silent --max-time 3 --url http://127.0.0.1:7070/healthz ; do docker service ls ; sleep 3 ; done
+        timeout-minutes: 3
+      - name: 'service status'
+        if: failure()
+        run: docker service ls
+      - name: 'service logs'
+        if: failure()
+        run: docker service logs hasura_graphql-engine
