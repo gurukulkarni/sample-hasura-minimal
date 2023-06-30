@@ -25,7 +25,6 @@ jobs:
       - run: docker network create --ingress --driver overlay ingress || true
       - run: docker network create -d overlay hasura
       - run: docker stack deploy hasura -c docker-compose.yaml
-        working-directory: internaldocumentation/playground/sample-minimal-hasura
       - run: until curl --fail --silent --max-time 3 --url http://127.0.0.1:7070/healthz ; do docker service ls ; sleep 3 ; done
         timeout-minutes: 3
       - name: 'service status'
